@@ -1,0 +1,30 @@
+{
+    "name": "wpint/core",
+    "description": "This is the core library for wpint",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "WPINT\\Core\\":  "src/"
+        }
+    },
+    "replace": {
+
+    },
+    "authors": [
+        {
+            "name": "Ali Barzegar Rahimi",
+            "email": "ali.barzegar.rahimi@gmail.com"
+        }
+    ],
+    "require": {
+        "laravel/framework": "*",
+        "wpint/contracts": "^1.0.0",
+        "wpint/route": "^1.2.2",
+        "wpint/wpapi": "^1.2.0",
+        "wpint/support": "^1.2.0"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+    
+}

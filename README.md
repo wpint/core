@@ -1,2 +1,3 @@
 # core
-This is the core module of the WPINT framework 
+This is the core library of the wpint framework for wordpress plugin development
+
