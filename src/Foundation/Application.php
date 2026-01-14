@@ -5,20 +5,23 @@ namespace WPINT\Core\Foundation;
 use Illuminate\Foundation\Application as FrameworkApplication;
 
 use Exception;
+use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Events\EventServiceProvider;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\PackageManifest;
 use Illuminate\Foundation\ProviderRepository;
+use Illuminate\Http\Request;
 use Illuminate\Log\LogServiceProvider;
-use Illuminate\Routing\RoutingServiceProvider;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Traits\Macroable;
-use WPINT\Core\Providers\FileDirectServiceProvider;
-use WPINT\Core\Providers\FileServiceProvider;
-use WPINT\Core\Providers\MigrationServiceProvider;
-use WPINT\Core\Providers\RequestServiceProvider;
-use Wpint\Route\RouteServiceProvider;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\ConsoleOutput;
+use WPINT\Core\Foundation\Providers\FileDirectServiceProvider;
+use WPINT\Core\Foundation\Providers\FileServiceProvider;
+use WPINT\Core\Foundation\Providers\MigrationServiceProvider;
+use WPINT\Core\Foundation\Routing\RouterServiceProvider;
 use Wpint\WPAPI\WPAPIServiceProvider;
+use Illuminate\Contracts\Console\Kernel as ConsoleKernelContract;
 
 class Application extends FrameworkApplication
 {
@@ -41,6 +44,7 @@ class Application extends FrameworkApplication
         if ($basePath) {
             $this->setBasePath($basePath);
         }
+                    
         do_action('wpint_init', $this);
 
         $this->registerBaseBindings();
@@ -61,10 +65,14 @@ class Application extends FrameworkApplication
             is_string($basePath) => $basePath,
             default => static::inferBasePath(),
         };
-
+     
         do_action('wpint_before_load_configuration', self::$instance);
-
-        return (new Configuration\ApplicationBuilder(new static($basePath)));
+        
+        return (new \WPINT\Core\Foundation\Configuration\ApplicationBuilder(new static($basePath)))            
+            ->withKernels()
+            ->withEvents()
+            ->withCommands()
+            ->withProviders();
     }
 
     /**
@@ -94,9 +102,8 @@ class Application extends FrameworkApplication
     protected function registerBaseServiceProviders()
     {
         $this->register(new LogServiceProvider($this));
-        $this->register(new RequestServiceProvider($this));
-        $this->register(new RouteServiceProvider($this));
         $this->register(new EventServiceProvider($this));
+        $this->register(new RouterServiceProvider($this));
         $this->register(new WPAPIServiceProvider($this));
         $this->register(new FileDirectServiceProvider($this));
         $this->register(new FileServiceProvider($this));
@@ -114,78 +121,45 @@ class Application extends FrameworkApplication
     }
 
     /**
-     * Determine if the application routes are cached.
+     * Handle the incoming HTTP request and send the response to the browser.
      *
-     * @return bool
-     */
-    public function routesAreCached()
-    {
-        return true;
-    }
-
-    /**
-     * Get the path to the routes cache file.
-     *
-     * @return string
-     */
-    public function getCachedRoutesPath()
-    {
-        return [];
-    }
-
-    
-
-    /**
-     * Register the core class aliases in the container.
-     *
+     * @param  \Illuminate\Http\Request  $request
      * @return void
      */
-    public function registerCoreContainerAliases()
+    public function handleRequest(Request $request)
     {
-        
-        foreach ([
-            'app' => [self::class, \Illuminate\Contracts\Container\Container::class, \Illuminate\Contracts\Foundation\Application::class, \Psr\Container\ContainerInterface::class],
-            'auth' => [\Illuminate\Auth\AuthManager::class, \Illuminate\Contracts\Auth\Factory::class],
-            'auth.driver' => [\Illuminate\Contracts\Auth\Guard::class],
-            'auth.password' => [\Illuminate\Auth\Passwords\PasswordBrokerManager::class, \Illuminate\Contracts\Auth\PasswordBrokerFactory::class],
-            'auth.password.broker' => [\Illuminate\Auth\Passwords\PasswordBroker::class, \Illuminate\Contracts\Auth\PasswordBroker::class],
-            'blade.compiler' => [\Illuminate\View\Compilers\BladeCompiler::class],
-            'cache' => [\Illuminate\Cache\CacheManager::class, \Illuminate\Contracts\Cache\Factory::class],
-            'cache.store' => [\Illuminate\Cache\Repository::class, \Illuminate\Contracts\Cache\Repository::class, \Psr\SimpleCache\CacheInterface::class],
-            'cache.psr6' => [\Symfony\Component\Cache\Adapter\Psr16Adapter::class, \Symfony\Component\Cache\Adapter\AdapterInterface::class, \Psr\Cache\CacheItemPoolInterface::class],
-            'config' => [\Illuminate\Config\Repository::class, \Illuminate\Contracts\Config\Repository::class],
-            'cookie' => [\Illuminate\Cookie\CookieJar::class, \Illuminate\Contracts\Cookie\Factory::class, \Illuminate\Contracts\Cookie\QueueingFactory::class],
-            'db' => [\Illuminate\Database\DatabaseManager::class, \Illuminate\Database\ConnectionResolverInterface::class],
-            'db.connection' => [\Illuminate\Database\Connection::class, \Illuminate\Database\ConnectionInterface::class],
-            'db.schema' => [\Illuminate\Database\Schema\Builder::class],
-            'encrypter' => [\Illuminate\Encryption\Encrypter::class, \Illuminate\Contracts\Encryption\Encrypter::class, \Illuminate\Contracts\Encryption\StringEncrypter::class],
-            'events' => [\Illuminate\Events\Dispatcher::class, \Illuminate\Contracts\Events\Dispatcher::class],
-            'files' => [\Illuminate\Filesystem\Filesystem::class],
-            'filesystem' => [\Illuminate\Filesystem\FilesystemManager::class, \Illuminate\Contracts\Filesystem\Factory::class],
-            'filesystem.disk' => [\Illuminate\Contracts\Filesystem\Filesystem::class],
-            'filesystem.cloud' => [\Illuminate\Contracts\Filesystem\Cloud::class],
-            'hash' => [\Illuminate\Hashing\HashManager::class],
-            'hash.driver' => [\Illuminate\Contracts\Hashing\Hasher::class],
-            'mail.manager' => [\Illuminate\Mail\MailManager::class, \Illuminate\Contracts\Mail\Factory::class],
-            'mailer' => [\Illuminate\Mail\Mailer::class, \Illuminate\Contracts\Mail\Mailer::class, \Illuminate\Contracts\Mail\MailQueue::class],
-            'queue' => [\Illuminate\Queue\QueueManager::class, \Illuminate\Contracts\Queue\Factory::class, \Illuminate\Contracts\Queue\Monitor::class],
-            'queue.connection' => [\Illuminate\Contracts\Queue\Queue::class],
-            'queue.failer' => [\Illuminate\Queue\Failed\FailedJobProviderInterface::class],
-            'redis' => [\Illuminate\Redis\RedisManager::class, \Illuminate\Contracts\Redis\Factory::class],
-            'redis.connection' => [\Illuminate\Redis\Connections\Connection::class, \Illuminate\Contracts\Redis\Connection::class],
-            'request' => [\Illuminate\Http\Request::class, \Symfony\Component\HttpFoundation\Request::class],
-            'session' => [\Illuminate\Session\SessionManager::class],
-            'session.store' => [\Illuminate\Session\Store::class, \Illuminate\Contracts\Session\Session::class],
-            'translator' => [\Illuminate\Translation\Translator::class, \Illuminate\Contracts\Translation\Translator::class],
-            'validator' => [\Illuminate\Validation\Factory::class, \Illuminate\Contracts\Validation\Factory::class],
-            'view' => [\Illuminate\View\Factory::class, \Illuminate\Contracts\View\Factory::class],
-        ] as $key => $aliases) {
-            foreach ($aliases as $alias) {
-                $this->alias($key, $alias);
-            }
-        }
+        $kernel = $this->make(Kernel::class);
 
+        $response = $kernel->handle($request);
+
+        if($response)
+        {
+
+            $response->send();       
+            $kernel->terminate($request, $response);
+        };  
+
+ 
     }
 
+    /**
+     * Handle the incoming Artisan command.
+     *
+     * @param  \Symfony\Component\Console\Input\InputInterface  $input
+     * @return int
+     */
+    public function handleCommand(InputInterface $input)
+    {
+        $kernel = $this->make(ConsoleKernelContract::class);
+
+        $status = $kernel->handle(
+            $input,
+            new ConsoleOutput()
+        );
+     
+        $kernel->terminate($input, $status);
+
+        return $status;
+    }
 
 }

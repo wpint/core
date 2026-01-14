@@ -3,8 +3,9 @@
 namespace WPINT\Core\Foundation\Support;
 
 use Illuminate\Support\Collection;
+use Illuminate\Support\DefaultProviders as SupportDefaultProviders;
 
-class DefaultProviders
+class DefaultProviders extends SupportDefaultProviders
 {
     /**
      * The current providers.
@@ -23,7 +24,7 @@ class DefaultProviders
             \Illuminate\Broadcasting\BroadcastServiceProvider::class,
             \Illuminate\Bus\BusServiceProvider::class,
             \Illuminate\Cache\CacheServiceProvider::class,
-            \WPINT\Core\Providers\ConsoleSupportServiceProvider::class,
+            \WPINT\Core\Foundation\Providers\ConsoleSupportServiceProvider::class,
             \Illuminate\Concurrency\ConcurrencyServiceProvider::class,
             \Illuminate\Cookie\CookieServiceProvider::class,
             \Illuminate\Database\DatabaseServiceProvider::class,
@@ -45,59 +46,4 @@ class DefaultProviders
         ];
     }
 
-    /**
-     * Merge the given providers into the provider collection.
-     *
-     * @param  array  $providers
-     * @return static
-     */
-    public function merge(array $providers)
-    {
-        $this->providers = array_merge($this->providers, $providers);
-
-        return new static($this->providers);
-    }
-
-    /**
-     * Replace the given providers with other providers.
-     *
-     * @param  array  $replacements
-     * @return static
-     */
-    public function replace(array $replacements)
-    {
-        $current = new Collection($this->providers);
-
-        foreach ($replacements as $from => $to) {
-            $key = $current->search($from);
-
-            $current = is_int($key) ? $current->replace([$key => $to]) : $current;
-        }
-
-        return new static($current->values()->toArray());
-    }
-
-    /**
-     * Disable the given providers.
-     *
-     * @param  array  $providers
-     * @return static
-     */
-    public function except(array $providers)
-    {
-        return new static((new Collection($this->providers))
-            ->reject(fn ($p) => in_array($p, $providers))
-            ->values()
-            ->toArray());
-    }
-
-    /**
-     * Convert the provider collection to an array.
-     *
-     * @return array
-     */
-    public function toArray()
-    {
-        return $this->providers;
-    }
 }

@@ -1,5 +1,6 @@
 <?php 
-namespace WPINT\Core\Providers;
+
+namespace WPINT\Core\Foundation\Providers;
 
 use WP_Filesystem_Direct;
 use WPINT\Core\Foundation\Application;

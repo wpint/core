@@ -1,6 +1,6 @@
 <?php
 
-namespace WPINT\Core\Providers;
+namespace WPINT\Core\Foundation\Providers;
 
 use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Foundation\Providers\ComposerServiceProvider;

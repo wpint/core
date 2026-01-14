@@ -19,8 +19,6 @@
     ],
     "require": {
         "laravel/framework": "*",
-        "wpint/contracts": "^1.0.0",
-        "wpint/route": "^1.2.2",
         "wpint/wpapi": "^1.2.0",
         "wpint/support": "^1.2.0"
     },

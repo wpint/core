@@ -16,18 +16,5 @@ class ServiceProvider extends SupportServiceProvider
     {
         return new DefaultProviders();
     }
-
-    /**
-     * Provider's commands
-     *
-     * @var array
-     */
-    public static $commands = [];
-
-    // Remove command method
-    public function commands($commands)
-    {
-        return;   
-    }
     
 }
